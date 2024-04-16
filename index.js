@@ -3,6 +3,10 @@ require('dotenv').config()
 const express = require("express");   
 const socketio = require("socket.io"); 
 const http = require("http");
+const cors = require('cors');
+
+
+
 const { ExpressPeerServer } = require('peer');
 const schedule = require('node-schedule');
 const controlRooms = require("./controllers/controlRooms"); 
@@ -37,10 +41,35 @@ const app = express();
 
 const router = require("./controllers/chatController");
 const server = http.createServer(app);
-const io = socketio(server); 
+const io = socketio(server, {
+    cors: {
+        origin: "https://chat-app-eight-sigma-17.vercel.app",
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
+
+const allowedOrigins = [
+    "https://chat-app-eight-sigma-17.vercel.app",
+    "http://localhost:3000" // Add this if you are testing locally
+];
 
 app.use(cors());
 app.use(router); 
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true, // This is important for sessions or basic authentication
+    optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+};
+
+app.use(cors(corsOptions));
 
 const roomRouter = require("./routes/room");
 app.use("/",roomRouter);
